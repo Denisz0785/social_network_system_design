@@ -31,6 +31,14 @@ paths:
                 place:
                   type: string
                   description: Название места (макс. 100 символов)
+                address:
+                  type: string
+                  description: Дополнительный адрес (улица, дом)
+                  maxLength: 200
+                coordinates:
+                  type: string
+                  description: Географические координаты места (например, "37.7749,-122.4194")
+                  maxLength: 50
                 photos:
                   type: array
                   items:
@@ -40,6 +48,8 @@ paths:
               required:
                 - description
                 - place
+                - address
+                - coordinates
                 - photos
             examples:
               request:
@@ -126,7 +136,7 @@ paths:
           description: Неверный запрос (например, пустой комментарий)
         500:
           description: Ошибка сервера
-  /posts/{post_id}/like:
+  /posts/{post_id}/likes:
     post:
       summary: Лайк поста (или отмена лайка)
       description: Пользователь может поставить лайк на пост или отменить лайк, если он уже был поставлен
@@ -146,7 +156,7 @@ paths:
           description: Ошибка, если пользователь не может поставить лайк (например, если пост не существует)
         500:
           description: Ошибка сервера
-  /users/{user_id}/subscribe:
+  /users/{user_id}/subscriptions:
     post:
       summary: Подписка на пользователя
       description: Пользователь может подписаться на другого пользователя. Подписка добавляется, если она еще не существует.
@@ -187,6 +197,18 @@ paths:
           description: Идентификатор пользователя, чьи посты нужно получить
           schema:
             type: string
+        - name: limit
+          in: query
+          description: Количество постов на страницу (например, 10)
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          description: Смещение (например, 0, если нужно начать с первого поста)
+          schema:
+            type: integer
+            default: 0
       responses:
         200:
           description: Успешно получены посты
@@ -214,6 +236,18 @@ paths:
           schema:
             type: string
             maxLength: 100
+        - name: limit
+          in: query
+          description: Количество мест на страницу
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          description: Смещение для поиска
+          schema:
+            type: integer
+            default: 0
       responses:
         200:
           description: Успешный поиск
@@ -262,38 +296,25 @@ paths:
           description: Неверный запрос (например, строка поиска слишком длинная)
         500:
           description: Ошибка сервера
-  /posts/{place_id}:
-    get:
-      summary: Получение постов из конкретного места
-      description: Получение всех постов, связанных с указанным местом.
-      tags:
-        - Posts
-      parameters:
-        - name: place_id
-          in: path
-          required: true
-          description: ID места, для которого нужно получить посты
-          schema:
-            type: string
-      responses:
-        200:
-          description: Успешный запрос, возвращены посты для указанного места
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Post'
-        404:
-          description: Место с таким ID не найдено
-        500:
-          description: Ошибка сервера
   /feed:
     get:
       summary: Получение ленты постов для авторизованного пользователя
       description: Метод возвращает ленту постов, которые пользователь может видеть, основываясь на его подписках.
       tags:
         - Feed
+      parameters:
+        - name: limit
+          in: query
+          description: Количество постов на страницу
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          description: Смещение для ленты
+          schema:
+            type: integer
+            default: 0
       responses:
         200:
           description: Успешно получена лента постов
@@ -303,6 +324,125 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Post'
+        500:
+          description: Ошибка сервера
+  /users/{user_id}/subscriptions/list:
+    get:
+      summary: Получение подписок пользователя
+      description: Метод возвращает список всех пользователей, на которых подписан данный пользователь.
+      tags:
+        - Users
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Количество подписок на страницу
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          description: Смещение для получения следующей порции подписок
+          schema:
+            type: integer
+            default: 0
+      responses:
+        200:
+          description: Список подписок
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: ID подписанного пользователя
+        404:
+          description: Пользователь не найден
+        500:
+          description: Ошибка сервера
+  /posts/{post_id}/comments/list:
+    get:
+      summary: Получение комментариев поста
+      description: Метод возвращает все комментарии для указанного поста.
+      tags:
+        - Posts
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          description: ID поста
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Количество комментариев на страницу
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          description: Смещение для получения следующей порции комментариев
+          schema:
+            type: integer
+            default: 0
+      responses:
+        200:
+          description: Список комментариев
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    comment_id:
+                      type: string
+                      description: Идентификатор комментария
+                    user_id:
+                      type: string
+                      description: Идентификатор пользователя, который написал комментарий
+                    comment:
+                      type: string
+                      description: Текст комментария
+                    created_at:
+                      type: string
+                      format: date-time
+                      description: Время создания комментария
+        404:
+          description: Пост не найден
+        500:
+          description: Ошибка сервера
+  /posts/{post_id}/likes/count:
+    get:
+      summary: Получение количества лайков на посте
+      description: Метод возвращает количество лайков для указанного поста.
+      tags:
+        - Posts
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          description: ID поста
+          schema:
+            type: string
+      responses:
+        200:
+          description: Количество лайков
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  like_count:
+                    type: integer
+                    description: Количество лайков на посте
+        404:
+          description: Пост не найден
         500:
           description: Ошибка сервера
 
@@ -324,6 +464,14 @@ components:
         place:
           type: string
           description: Место, к которому привязан пост
+        address:
+          type: string
+          description: Дополнительный адрес (улица, дом)
+          maxLength: 200
+        coordinates:
+          type: string
+          description: Географические координаты места (например, "37.7749,-122.4194")
+          maxLength: 50
         photos:
           type: array
           items:
@@ -338,5 +486,7 @@ components:
         - post_id
         - description
         - place
+        - address
+        - coordinates
         - photos
         - created_at
