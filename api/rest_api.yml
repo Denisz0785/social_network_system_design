@@ -15,22 +15,24 @@ paths:
   /posts:
     post:
       summary: Создание нового поста
-      description: Создание нового поста с фотографиями, текстом и привязкой к месту
+      description: Создание нового поста с текстом, местом и фотографиями
       tags:
         - Posts
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
                 description:
                   type: string
                   description: Текст поста (макс. 300 символов)
+                  maxLength: 300
                 place:
                   type: string
                   description: Название места (макс. 100 символов)
+                  maxLength: 100
                 address:
                   type: string
                   description: Дополнительный адрес (улица, дом)
@@ -43,22 +45,14 @@ paths:
                   type: array
                   items:
                     type: string
-                    format: binary
-                  description: Список изображений (файлы изображений)
+                    description: Ссылки на изображения, которые были предварительно загружены
+                    format: uri
               required:
                 - description
                 - place
                 - address
                 - coordinates
                 - photos
-            examples:
-              request:
-                value:
-                  description: "Описание путешествия по прекрасным пляжам!"
-                  place: "Бали, Индонезия"
-                  photos: 
-                    - "photo1.jpg"
-                    - "photo2.jpg"
       responses:
         200:
           description: Успешное создание поста
@@ -67,7 +61,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/Post'
         400:
-          description: Неверный запрос, не все обязательные поля заполнены
+          description: Неверный запрос, не все обязательные поля заполнены или превышены ограничения
+        500:
+          description: Ошибка сервера
+  /photos/upload:
+    post:
+      summary: Загрузка изображений
+      description: Загрузка изображений для поста.
+      tags:
+        - Posts
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photos:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Список изображений для загрузки
+      responses:
+        200:
+          description: Изображения успешно загружены
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: URL изображения
+        400:
+          description: Неверный запрос
         500:
           description: Ошибка сервера
   /posts/{post_id}/comments:
