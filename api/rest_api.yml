@@ -353,7 +353,7 @@ paths:
                   $ref: '#/components/schemas/Post'
         500:
           description: Ошибка сервера
-  /users/{user_id}/subscriptions/list:
+  /users/subscriptions/{user_id}:
     get:
       summary: Получение подписок пользователя
       description: Метод возвращает список всех пользователей, на которых подписан данный пользователь.
@@ -392,7 +392,7 @@ paths:
           description: Пользователь не найден
         500:
           description: Ошибка сервера
-  /posts/{post_id}/comments/list:
+  /posts/comments/{post_id}:
     get:
       summary: Получение комментариев поста
       description: Метод возвращает все комментарии для указанного поста.
@@ -444,7 +444,7 @@ paths:
           description: Пост не найден
         500:
           description: Ошибка сервера
-  /posts/{post_id}/likes/count:
+  /posts/likes/{post_id}:
     get:
       summary: Получение количества лайков на посте
       description: Метод возвращает количество лайков для указанного поста.
