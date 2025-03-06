@@ -1,0 +1,42 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "User")
+Container(loadBalancer, "Load Balancer", "Nginx", "Uses round robin")
+Container(apiGateWay,"API GateWay")
+
+ContainerQueue(messageQueue, "Events queue", "Saves new posts and subscriptions","Kafka")
+Container(post,"Post Service")
+ContainerDb(postDB, "POST database", "PgSQL", "Stores POSTs",  $tags="db")
+Container(media,"Media service")
+ContainerDb(mediaDB, "Media database", "S3 Minio", "Stores media",  $tags="db")
+Container(subscription,"Subscription service")
+ContainerDb(subscriptionDB, "Subscription database", "PgSQL", "Subscription's media",  $tags="db")
+Container(place,"Place service")
+ContainerDb(placeDB, "Place database", "PgSQL", "Stores places",  $tags="db")
+Container(cdc,"CDC","Debezium")
+Container(feed,"Feed Service")
+ContainerDb(feedDB, "Feed database", "Redis", "Stores users feeds",  $tags="db")
+
+Rel(user,loadBalancer,"REST")
+Rel(loadBalancer,apiGateWay,"REST")
+Rel(apiGateWay,post,"REST")
+Rel(post,postDB,"REST")
+Rel(apiGateWay,media,"REST")
+Rel(media,mediaDB,"REST")
+Rel(apiGateWay,subscription,"REST")
+Rel(subscription,subscriptionDB,"REST")
+
+Rel(apiGateWay,place,"request of searching place","REST")
+Rel(place,placeDB,"REST")
+Rel(cdc,postDB,"get changes of url_media","REST")
+Rel(cdc,media,"sends new url_media in posts DB","REST")
+Rel(feed,feedDB,"REST")
+Rel(feed,subscription,"Get actual list of user's subscriptions","REST")
+
+
+Rel(post, messageQueue, "Publishes new post")
+Rel(subscription, messageQueue, "Publishes new subscriptions")
+Rel(feed,messageQueue, "get new posts and subscriptions")
+
+@enduml
